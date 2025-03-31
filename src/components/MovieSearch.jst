@@ -1,0 +1,108 @@
+// src/components/MovieSearch.jsx
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { searchMovies } from '../services/tmdbApi';
+import { saveToLocalStorage, getFromLocalStorage } from '../services/localStorage';
+import './MovieSearch.css';
+
+const MovieSearch = () => {
+  const [query, setQuery] = useState('');
+  const [movies, setMovies] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  // Load previous search results from localStorage on component mount
+  useEffect(() => {
+    const savedQuery = getFromLocalStorage('lastQuery');
+    const savedMovies = getFromLocalStorage('lastSearchResults');
+    
+    if (savedQuery) {
+      setQuery(savedQuery);
+    }
+    
+    if (savedMovies) {
+      setMovies(savedMovies);
+    }
+  }, []);
+
+  const handleSearch = async (e) => {
+    e.preventDefault();
+    
+    if (!query.trim()) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const results = await searchMovies(query);
+      setMovies(results);
+      
+      // Save search results to localStorage
+      saveToLocalStorage('lastQuery', query);
+      saveToLocalStorage('lastSearchResults', results);
+    } catch (err) {
+      setError('Failed to search movies. Please try again.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="movie-search-container">
+      <h1>Movie Search</h1>
+      
+      <form className="search-form" onSubmit={handleSearch}>
+        <input
+          type="text"
+          className="search-input"
+          placeholder="Search for a movie..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button type="submit" className="search-button" disabled={loading}>
+          {loading ? 'Searching...' : 'Search'}
+        </button>
+      </form>
+      
+      {error && <div className="error">{error}</div>}
+      
+      <div className="movies-grid">
+        {movies.map((movie) => (
+          <Link 
+            to={`/movie/${movie.id}`} 
+            key={movie.id} 
+            className="movie-link"
+          >
+            <div className="movie-card">
+              {movie.poster_path ? (
+                <img
+                  className="movie-poster"
+                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
+                  alt={`${movie.title} poster`}
+                />
+              ) : (
+                <div className="no-image">No Image Available</div>
+              )}
+              
+              <div className="movie-info">
+                <h3>{movie.title}</h3>
+                <p className="release-date">
+                  Release: {movie.release_date ? new Date(movie.release_date).toLocaleDateString() : 'Unknown'}
+                </p>
+                <p className="rating">Rating: {movie.vote_average ? `${movie.vote_average}/10` : 'Not rated'}</p>
+                <p className="overview">{movie.overview || 'No overview available'}</p>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+      
+      {movies.length === 0 && !loading && !error && (
+        <p>No movies found. Try searching for something!</p>
+      )}
+    </div>
+  );
+};
+
+export default MovieSearch;
