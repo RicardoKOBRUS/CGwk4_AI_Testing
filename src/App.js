@@ -9,7 +9,7 @@ import MovieReview from './components/MovieReview';
 import ReviewHistory from './components/ReviewHistory';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import OfflineDetector from './components/OfflineDetector';
-import PWAStatus from './components/PWAStatus';
+//import PWAStatus from './components/PWAStatus';
 import './App.css';
 
 function App() {
